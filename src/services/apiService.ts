@@ -10,26 +10,26 @@ import type {
 } from '../models';
 
 // Use environment variable or fallback to the IP address
-const API_BASE_URL = '/api';
+// const API_BASE_URL = '/api';
 
-const apiClient = axios.create({
-  baseURL: API_BASE_URL,
-  timeout: 1000000,
+// const apiClient = axios.create({
+//   baseURL: API_BASE_URL,
+//   timeout: 1000000,
   
-});
+// });
 
 const oldApiClient = axios.create({
-  baseURL: 'http://localhost:3000',
+  baseURL: 'http://localhost:8000',
   timeout: 1000000,
 });
 
 export const fetchJobTitles = async (): Promise<JobTitle[]> => {
-  const response = await apiClient.get<JobTitlesResponse>('/titles');
+  const response = await oldApiClient.get<JobTitlesResponse>('/titles');
   return response.data.data;
 };
 
 export const fetchSeniorityLevels = async (): Promise<SeniorityLevel[]> => {
-  const response = await apiClient.get<SeniorityLevelsResponse>('/seniority-levels');
+  const response = await oldApiClient.get<SeniorityLevelsResponse>('/seniority-levels');
   return response.data.data;
 };
 
@@ -44,7 +44,7 @@ export const prepareInterview = async (jobDescription: string, resumeFile: File)
   formData.append('jd_text', jobDescription);  // Job description as text with key "jd_text"
   formData.append('cv_file', resumeFile);      // Resume file with key "cv_file"
 
-  const response = await apiClient.post<AnalysisResponse>('/prepare-interview', formData, {
+  const response = await oldApiClient.post<AnalysisResponse>('/prepare-interview', formData, {
     headers: {
       'Content-Type': 'multipart/form-data',
     },
@@ -57,6 +57,6 @@ export const prepareInterview = async (jobDescription: string, resumeFile: File)
 // Keep the old function for backward compatibility (if needed)
 export const fetchAnalysis = async (): Promise<AnalysisResponse> => {
   // GET analysis mock data from backend
-  const response = await apiClient.get<AnalysisResponse>('/analysis');
+  const response = await oldApiClient.get<AnalysisResponse>('/analysis');
   return response.data;
 };

@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Button } from '../components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Badge } from '../components/ui/badge';
-import { Download, ChevronDown, ChevronUp, Save } from 'lucide-react';
+import { Download, ChevronDown, ChevronUp} from 'lucide-react';
 import { useInterviewStore } from '../store/useInterviewStore';
 import { PDFExportService } from '../services/pdfExportService';
 
@@ -115,10 +115,6 @@ export default function QuestionGeneratorPage() {
   const handleSaveAsPDF = () => {
     const pdfService = new PDFExportService();
     pdfService.exportInterviewQuestions(candidateInfo, questionsByCategory);
-  };
-
-  const handleSave = () => {
-    alert('Save functionality will be implemented soon!');
   };
 
   return (
@@ -269,14 +265,6 @@ export default function QuestionGeneratorPage() {
 
         {/* Footer Actions */}
         <div className="mt-8 flex flex-col sm:flex-row justify-center gap-4">
-          <Button 
-            variant="outline"
-            onClick={handleSave}
-            className="flex items-center justify-center space-x-2 w-full sm:w-auto"
-          >
-            <Save className="w-4 h-4" />
-            <span>Save</span>
-          </Button>
           <Button 
             onClick={handleSaveAsPDF}
             className="bg-blue-600 hover:bg-blue-700 text-white flex items-center justify-center space-x-2 w-full sm:w-auto"

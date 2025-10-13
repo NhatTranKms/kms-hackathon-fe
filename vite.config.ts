@@ -10,17 +10,5 @@ export default defineConfig({
     alias: {
       "@": path.resolve(__dirname, "./src"),
     },
-  },
-  server: {
-    proxy: {
-      '/': {
-        // target: 'http://52.221.250.230',
-        target: 'http://0.0.0.0:8000',
-        changeOrigin: true,
-        secure: false,
-        // Remove rewrite if backend expects /api prefix
-        // rewrite: (path) => path.replace(/^\/api/, ''),
-      },
-    },
-  },
+  }
 })
