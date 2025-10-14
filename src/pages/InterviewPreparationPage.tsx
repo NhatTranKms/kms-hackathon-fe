@@ -4,7 +4,7 @@ import { Button } from '../components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Textarea } from '../components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
-import { Upload, FileText, X } from 'lucide-react';
+import { Upload, FileText, Type, X } from 'lucide-react';
 
 import { useInterviewStore } from '../store/useInterviewStore';
 import { prepareInterview } from '../services/apiService';
@@ -37,10 +37,12 @@ export default function InterviewPreparationPage() {
     resume: resume || ''
   });
 
+  const [jobDescInputMode, setJobDescInputMode] = useState<'text' | 'file'>('text');
   const [uploadedResumeFile, setUploadedResumeFile] = useState<File | null>(null);
-
+  const [uploadedJobDescFile, setUploadedJobDescFile] = useState<File | null>(null);
 
   const [resumeUploadError, setResumeUploadError] = useState<string>('');
+  const [jobDescUploadError, setJobDescUploadError] = useState<string>('');
   const [formErrors, setFormErrors] = useState<{
     title?: string;
     seniorityLevel?: string;
@@ -48,6 +50,7 @@ export default function InterviewPreparationPage() {
     resume?: string;
   }>({});
   const resumeFileInputRef = useRef<HTMLInputElement>(null);
+  const jobDescFileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     setFormData(prev => ({
@@ -90,10 +93,40 @@ export default function InterviewPreparationPage() {
 
 
 
+  const handleJobDescFileUpload = async (file: File) => {
+    setJobDescUploadError('');
+    
+    // Validate file type
+    const allowedTypes = ['application/pdf', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'application/msword'];
+    if (!allowedTypes.includes(file.type)) {
+      setJobDescUploadError('Invalid file type. Please upload a PDF or DOCX file only.');
+      return;
+    }
+
+    // Validate file size (10MB limit)
+    if (file.size > 10 * 1024 * 1024) {
+      setJobDescUploadError('File size exceeds limit. Please upload a file smaller than 10MB.');
+      return;
+    }
+
+    setUploadedJobDescFile(file);
+    // Clear form error when file is successfully uploaded
+    if (formErrors.jobDescription) {
+      setFormErrors(prev => ({ ...prev, jobDescription: undefined }));
+    }
+  };
+
   const handleResumeFileInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
       handleResumeFileUpload(file);
+    }
+  };
+
+  const handleJobDescFileInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      handleJobDescFileUpload(file);
     }
   };
 
@@ -111,6 +144,18 @@ export default function InterviewPreparationPage() {
     }
   };
 
+  const handleJobDescDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+  };
+
+  const handleJobDescDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    const file = e.dataTransfer.files[0];
+    if (file) {
+      handleJobDescFileUpload(file);
+    }
+  };
+
 
 
   const removeUploadedResumeFile = () => {
@@ -122,11 +167,25 @@ export default function InterviewPreparationPage() {
     }
   };
 
+  const removeUploadedJobDescFile = () => {
+    setUploadedJobDescFile(null);
+    setJobDescUploadError('');
+    setFormData(prev => ({ ...prev, jobDescription: '' }));
+    if (jobDescFileInputRef.current) {
+      jobDescFileInputRef.current.value = '';
+    }
+  };
 
 
+  const switchJobDescToTextMode = () => {
+    setJobDescInputMode('text');
+    removeUploadedJobDescFile();
+  };
 
-
-
+  const switchJobDescToFileMode = () => {
+    setJobDescInputMode('file');
+    setFormData(prev => ({ ...prev, jobDescription: '' }));
+  };
 
   const validateForm = () => {
     const errors: typeof formErrors = {};
@@ -139,9 +198,11 @@ export default function InterviewPreparationPage() {
       errors.seniorityLevel = 'Seniority Level is required';
     }
     
-    // Job Description is text only
-    if (!formData.jobDescription.trim()) {
-      errors.jobDescription = 'Job Description is required';
+    const hasJobDescription = jobDescInputMode === 'text' ? formData.jobDescription.trim() : uploadedJobDescFile;
+    if (!hasJobDescription) {
+      errors.jobDescription = jobDescInputMode === 'text' 
+        ? 'Job Description is required' 
+        : 'Please upload a job description file';
     }
     
     // Resume is file upload only
@@ -158,11 +219,6 @@ export default function InterviewPreparationPage() {
       return;
     }
 
-    if (!uploadedResumeFile) {
-      alert('Please upload a resume file');
-      return;
-    }
-
     // Update store with UI form data (keep for display purposes)
     setCandidateInfo({
       name: '', // Name will be extracted from resume analysis
@@ -173,14 +229,29 @@ export default function InterviewPreparationPage() {
     setJobDescription(formData.jobDescription);
     setResume(formData.resume);
 
-    // Call the new API with only job description and resume file
+    // Call the new API with all required parameters
     setIsLoading(true);
     
     // Navigate to analysis page immediately to show loading state
     navigate('/analysis');
     
     try {
-      const analysisData = await prepareInterview(formData.jobDescription, uploadedResumeFile);
+      // Prepare parameters based on input modes
+      const jobDescText = jobDescInputMode === 'text' ? formData.jobDescription : '';
+      const jobDescFile = jobDescInputMode === 'file' ? uploadedJobDescFile : null;
+
+      if (!uploadedResumeFile) {
+        alert('Please upload a resume file');
+        return;
+      }
+
+      const analysisData = await prepareInterview(
+        formData.title,
+        formData.seniorityLevel,
+        jobDescText,
+        jobDescFile,
+        uploadedResumeFile
+      );
       
       // Update candidate info from CV analysis if available
       if (analysisData.cv_analysis?.candidate_profile) {
@@ -221,8 +292,10 @@ export default function InterviewPreparationPage() {
       jobDescription: '',
       resume: ''
     });
+    setJobDescInputMode('text');
     setFormErrors({});
     removeUploadedResumeFile();
+    removeUploadedJobDescFile();
   };
 
   // const handleLoadMockData = () => {
@@ -301,18 +374,109 @@ export default function InterviewPreparationPage() {
 
             {/* Job Description */}
             <div className="space-y-3">
-              <label className="text-sm font-medium text-gray-700">
-                Job Description <span className="text-red-500">*</span>
-              </label>
-              <div className="space-y-2">
-                <Textarea
-                  placeholder="Enter job description here..."
-                  className={`h-[120px] resize-none ${formErrors.jobDescription ? 'border-red-500' : ''}`}
-                  value={formData.jobDescription}
-                  onChange={(e) => handleInputChange('jobDescription', e.target.value)}
-                />
-                {formErrors.jobDescription && (
-                  <p className="text-sm text-red-600">{formErrors.jobDescription}</p>
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                <label className="text-sm font-medium text-gray-700">
+                  Job Description <span className="text-red-500">*</span>
+                </label>
+                <div className="flex items-center space-x-2 flex-shrink-0">
+                  <Button
+                    type="button"
+                    variant={jobDescInputMode === 'text' ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={switchJobDescToTextMode}
+                    className={`flex items-center space-x-1 text-xs sm:text-sm ${
+                      jobDescInputMode === 'text' 
+                        ? 'bg-blue-600 hover:bg-blue-700 text-white' 
+                        : 'border-blue-300 text-blue-600 hover:bg-blue-50'
+                    }`}
+                  >
+                    <Type className="w-3 h-3 sm:w-4 sm:h-4" />
+                    <span>Text Input</span>
+                  </Button>
+                  <Button
+                    type="button"
+                    variant={jobDescInputMode === 'file' ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={switchJobDescToFileMode}
+                    className={`flex items-center space-x-1 text-xs sm:text-sm ${
+                      jobDescInputMode === 'file' 
+                        ? 'bg-blue-600 hover:bg-blue-700 text-white' 
+                        : 'border-blue-300 text-blue-600 hover:bg-blue-50'
+                    }`}
+                  >
+                    <Upload className="w-3 h-3 sm:w-4 sm:h-4" />
+                    <span>File Upload</span>
+                  </Button>
+                </div>
+              </div>
+
+              <div className="min-h-[120px]">
+                {jobDescInputMode === 'text' ? (
+                  <div className="space-y-2">
+                    <Textarea
+                      placeholder="Enter job description here..."
+                      className={`h-[120px] resize-none ${formErrors.jobDescription ? 'border-red-500' : ''}`}
+                      value={formData.jobDescription}
+                      onChange={(e) => handleInputChange('jobDescription', e.target.value)}
+                    />
+                    {formErrors.jobDescription && (
+                      <p className="text-sm text-red-600">{formErrors.jobDescription}</p>
+                    )}
+                  </div>
+                ) : (
+                  <div className="space-y-3 h-full">
+                    {!uploadedJobDescFile ? (
+                      <div
+                        className={`border-2 border-dashed rounded-lg p-6 text-center hover:border-gray-400 transition-colors cursor-pointer h-[120px] flex flex-col justify-center ${
+                          formErrors.jobDescription ? 'border-red-300' : 'border-gray-300'
+                        }`}
+                        onDragOver={handleJobDescDragOver}
+                        onDrop={handleJobDescDrop}
+                        onClick={() => jobDescFileInputRef.current?.click()}
+                      >
+                        <Upload className="w-8 h-8 text-gray-400 mx-auto mb-2" />
+                        <p className="text-sm text-gray-600 mb-1">Click to upload or drag and drop</p>
+                        <p className="text-xs text-gray-500">PDF or DOCX files only (max 10MB)</p>
+                        <input
+                          ref={jobDescFileInputRef}
+                          type="file"
+                          accept=".pdf,.docx,.doc"
+                          onChange={handleJobDescFileInputChange}
+                          className="hidden"
+                        />
+                      </div>
+                    ) : (
+                      <div className="border border-gray-200 rounded-lg p-4 bg-gray-50">
+                        <div className="flex items-center justify-between mb-3">
+                          <div className="flex items-center space-x-2">
+                            <FileText className="w-5 h-5 text-blue-600" />
+                            <div>
+                              <p className="text-sm font-medium text-gray-900">{uploadedJobDescFile.name}</p>
+                              <p className="text-xs text-gray-500">
+                                {(uploadedJobDescFile.size / 1024).toFixed(1)} KB • {uploadedJobDescFile.type.includes('pdf') ? 'PDF' : 'DOCX'}
+                              </p>
+                            </div>
+                          </div>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={removeUploadedJobDescFile}
+                            className="flex items-center space-x-1 text-red-600 hover:text-red-700"
+                          >
+                            <X className="w-4 h-4" />
+                            <span>Remove</span>
+                          </Button>
+                        </div>
+                      </div>
+                    )}
+                    {(jobDescUploadError || formErrors.jobDescription) && (
+                      <p className="text-sm text-red-600 flex items-center space-x-1">
+                        <X className="w-4 h-4" />
+                        <span>{jobDescUploadError || formErrors.jobDescription}</span>
+                      </p>
+                    )}
+                  </div>
                 )}
               </div>
             </div>
@@ -403,7 +567,8 @@ export default function InterviewPreparationPage() {
                 <Button 
                   onClick={handleSubmit}
                   disabled={isLoading || !formData.title.trim() || !formData.seniorityLevel.trim() || 
-                    !formData.jobDescription.trim() || !uploadedResumeFile}
+                    !(jobDescInputMode === 'text' ? formData.jobDescription.trim() : uploadedJobDescFile) ||
+                    !uploadedResumeFile}
                   className="bg-blue-600 hover:bg-blue-700 text-white px-8 flex-1 sm:flex-none"
                 >
                   {isLoading ? 'Analyzing...' : 'Submit'}

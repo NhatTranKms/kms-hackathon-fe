@@ -38,11 +38,30 @@ export const fetchInterviewSimulators = async (): Promise<InterviewSimulator[]> 
   return response.data.data;
 };
 
-export const prepareInterview = async (jobDescription: string, resumeFile: File): Promise<AnalysisResponse> => {
-  // Create FormData to send job description and resume file
+export const prepareInterview = async (
+  title: string,
+  level: string,
+  jdText: string,
+  jdFile: File | null,
+  cvFile: File
+): Promise<AnalysisResponse> => {
+  // Create FormData to send all parameters
   const formData = new FormData();
-  formData.append('jd_text', jobDescription);  // Job description as text with key "jd_text"
-  formData.append('cv_file', resumeFile);      // Resume file with key "cv_file"
+  
+  // Add title and level
+  formData.append('title', title);
+  formData.append('level', level);
+  
+  // Add job description (either text or file)
+  if (jdText) {
+    formData.append('jd_text', jdText);
+  }
+  if (jdFile) {
+    formData.append('jd_file', jdFile);
+  }
+  
+  // Add CV/resume file (required)
+  formData.append('cv_file', cvFile);
 
   const response = await oldApiClient.post<AnalysisResponse>('/prepare-interview', formData, {
     headers: {

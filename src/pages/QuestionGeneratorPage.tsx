@@ -207,9 +207,68 @@ export default function QuestionGeneratorPage() {
                      <div className="space-y-4">
                        <div>
                          <h4 className="text-sm font-semibold text-gray-700 mb-2">Expected Answer (Ideal Sample):</h4>
-                         <p className="text-sm text-gray-600 leading-relaxed bg-white p-3 rounded border">
-                           {question.expectedAnswer}
-                         </p>
+                         <div className="text-sm text-gray-600 leading-relaxed bg-white p-4 rounded border">
+                           {(() => {
+                             // First, try to split on numbered patterns within the text
+                             const text = question.expectedAnswer;
+                             const numberedSections = text.split(/(?=\d+[.)]\s)/);
+                             
+                             // If we found numbered sections, use them
+                             if (numberedSections.length > 1 && numberedSections[0].trim() === '') {
+                               numberedSections.shift(); // Remove empty first element
+                             }
+                             
+                             const paragraphs = numberedSections.length > 1 ? numberedSections : text.split('\n');
+                             
+                             return paragraphs.map((paragraph, idx) => {
+                               const trimmedParagraph = paragraph.trim();
+                               if (!trimmedParagraph) return null;
+                               
+                               // Handle numbered lists (1. 2. 3. or 1) 2) 3) etc.)
+                               if (trimmedParagraph.match(/^\d+[.)]\s/)) {
+                                 return (
+                                   <div key={idx} className="flex items-start space-x-2 mb-3">
+                                     <span className="font-semibold text-blue-600 flex-shrink-0 min-w-[24px]">
+                                       {trimmedParagraph.match(/^\d+[.)]/)?.[0]}
+                                     </span>
+                                     <span className="flex-1">
+                                       {trimmedParagraph.replace(/^\d+[.)]\s/, '')}
+                                     </span>
+                                   </div>
+                                 );
+                               }
+                               // Handle bullet points (- or • )
+                               else if (trimmedParagraph.match(/^[-•]\s/)) {
+                                 return (
+                                   <div key={idx} className="flex items-start space-x-2 mb-2 ml-4">
+                                     <span className="w-2 h-2 bg-blue-500 rounded-full mt-2 flex-shrink-0"></span>
+                                     <span className="flex-1">
+                                       {trimmedParagraph.replace(/^[-•]\s/, '')}
+                                     </span>
+                                   </div>
+                                 );
+                               }
+                               // Handle key points (Key points:, Important:, etc.)
+                               else if (trimmedParagraph.match(/^(Key points?|Important|Note|Example):/i)) {
+                                 return (
+                                   <div key={idx} className="mb-3">
+                                     <span className="font-semibold text-blue-700 block mb-1">
+                                       {trimmedParagraph}
+                                     </span>
+                                   </div>
+                                 );
+                               }
+                               // Regular paragraphs
+                               else {
+                                 return (
+                                   <p key={idx} className="mb-3 leading-relaxed">
+                                     {trimmedParagraph}
+                                 </p>
+                               );
+                               }
+                             }).filter(Boolean);
+                           })()}
+                         </div>
                        </div>
                        <div>
                          <h4 className="text-sm font-semibold text-gray-700 mb-2">Evaluation Rubric (What to Look For):</h4>
