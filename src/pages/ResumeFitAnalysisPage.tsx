@@ -13,7 +13,7 @@ import type { LegacyAnalysisResponse } from '../models/api';
 export default function ResumeFitAnalysisPage() {
   const navigate = useNavigate();
   const {
-    // candidateInfo,
+    candidateInfo,
     skillAnalysisData,
     isLoading
   } = useInterviewStore();
@@ -378,7 +378,8 @@ export default function ResumeFitAnalysisPage() {
           <div className="flex flex-col lg:flex-row lg:justify-between lg:items-center gap-3 mb-3">
             <div className="flex-1 min-w-0">
               <h2 className="text-lg sm:text-xl lg:text-2xl text-gray-700 font-bold break-words">
-                {analysisData.candidate.name} - {analysisData.candidate.title} - {analysisData.candidate.seniorityLevel}
+              {/* {analysisData.candidate.name} - {analysisData.candidate.title} - {analysisData.candidate.seniorityLevel} */}
+              {candidateInfo.name ? `${candidateInfo.name} - ${candidateInfo.title} - ${candidateInfo.seniorityLevel}` : `${candidateInfo.title} (${candidateInfo.seniorityLevel})`}
               </h2>
             </div>
             <div className="flex-shrink-0">
