@@ -25,7 +25,7 @@ export const useAnalysis = () => {
         matched: skillMatcher.matched_skills.map(skill => skill.skill_name),
         extra: skillMatcher.strong_areas.map(area => area.description),
         missing: skillMatcher.missing_critical_skills.map(skill => skill.skill_name),
-        gaps: skillMatcher.level_gap_analysis?.development_areas || []
+        gaps: cvAnalysisData?.skills_analysis?.skill_gaps || []
       },
       criteriaMatch: [
         ...skillMatcher.matched_skills.map(skill => ({

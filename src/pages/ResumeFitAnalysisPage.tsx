@@ -388,9 +388,9 @@ export default function ResumeFitAnalysisPage() {
               </span>
             </div>
           </div>
-          <div className="text-sm sm:text-base text-gray-600 break-words mt-2 leading-relaxed whitespace-pre-wrap">
+          {/* <div className="text-sm sm:text-base text-gray-600 break-words mt-2 leading-relaxed whitespace-pre-wrap">
             {analysisData.summary}
-          </div>
+          </div> */}
         </div>
 
         {/* Divider */}
@@ -590,9 +590,13 @@ export default function ResumeFitAnalysisPage() {
                 <span className="font-medium text-gray-900">Certifications:</span>
               </div>
               <div className="space-y-1">
-                {analysisData.education.certifications.map((cert, index) => (
-                  <div key={index} className="text-gray-700 break-words pl-4">{cert}</div>
-                ))}
+                {analysisData.education.certifications.length > 0 ? (
+                  analysisData.education.certifications.map((cert, index) => (
+                    <div key={index} className="text-gray-700 break-words pl-4">{cert}</div>
+                  ))
+                ) : (
+                  <div className="text-gray-500 pl-4">No certifications found</div>
+                )}
               </div>
             </div>
           ) : (
